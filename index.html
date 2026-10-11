@@ -84,17 +84,13 @@
                 
                 <div class="space-y-4 text-xs">
                     <!-- Image Uploads -->
-                    <div class="grid grid-cols-2 gap-3 mb-2">
+                    <div class="grid grid-cols-1 gap-3 mb-2">
                         <div class="bg-teal-50/60 p-3 rounded-xl border border-teal-100/80">
                             <label class="block font-bold text-[11px] uppercase tracking-wider text-brand-teal mb-1.5">Signature</label>
                             <input type="file" id="in-signature-image" accept="image/*" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-brand-navy file:text-white hover:file:bg-brand-teal cursor-pointer transition-colors">
                         </div>
-                        <div class="bg-teal-50/60 p-3 rounded-xl border border-teal-100/80">
-                            <label class="block font-bold text-[11px] uppercase tracking-wider text-brand-teal mb-1.5">Seal / Stamp</label>
-                            <input type="file" id="in-seal-image" accept="image/*" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-brand-navy file:text-white hover:file:bg-brand-teal cursor-pointer transition-colors">
-                        </div>
-                        <div class="col-span-2 mt-[-4px]">
-                            <p class="text-[10px] text-teal-800">Backgrounds are made transparent automatically. Placements randomize slightly on export.</p>
+                        <div class="mt-[-4px]">
+                            <p class="text-[10px] text-teal-800">Seal is loaded automatically. Backgrounds are made transparent automatically. Placements randomize slightly on export.</p>
                         </div>
                     </div>
 
@@ -281,8 +277,8 @@
                                 <!-- Right: Dynamic Seal & Signature Block -->
                                 <div class="w-5/12 flex flex-col items-center justify-end relative text-center">
                                     <div class="h-28 w-full flex justify-center items-center relative z-10 -mb-2">
-                                        <!-- Seal layer (behind signature) -->
-                                        <img id="out-seal-img" src="" class="absolute max-h-[130px] max-w-[170px] w-auto object-contain opacity-85" alt="Official Seal" style="display: none;">
+                                        <!-- Hardcoded Seal layer -->
+                                        <img id="out-seal-img" src="seal.png" class="absolute max-h-[130px] max-w-[170px] w-auto object-contain opacity-85" alt="Official Seal" style="display: block;">
                                         <!-- Signature layer (on top) -->
                                         <img id="out-signature-img" src="" class="absolute max-h-[110px] max-w-[240px] w-auto object-contain z-10" alt="Signature" style="display: none;">
                                     </div>
@@ -314,6 +310,7 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-screen').classList.remove('hidden');
                 setDefaultDates();
+                randomizeSealPosition(); // Initial seal placement
             } else {
                 alert('Invalid PIN.');
                 document.getElementById('pin-input').value = '';
@@ -327,6 +324,15 @@
             updatePreview();
         }
 
+        // Randomize Seal Position slightly for realism
+        function randomizeSealPosition() {
+            const sealImg = document.getElementById('out-seal-img');
+            const rotation = (Math.random() * 6 - 3).toFixed(1);
+            const shiftX = (Math.random() * 10 - 5).toFixed(1); 
+            const shiftY = (Math.random() * 10 - 5).toFixed(1);
+            sealImg.style.transform = `rotate(${rotation}deg) translate(${shiftX}px, ${shiftY}px)`;
+        }
+
         // Format Text with Bold (Markdown Style `**text**` to `<strong>text</strong>`)
         function formatText(text) {
             if (!text) return '';
@@ -334,7 +340,7 @@
             return formatted.replace(/\n/g, '<br>');
         }
 
-        // Handle Image Uploads with minor random rotation for realism
+        // Handle Image Uploads with minor random rotation for realism (Signature only)
         function handleImageUpload(inputId, outputId) {
             const input = document.getElementById(inputId);
             const img = document.getElementById(outputId);
@@ -356,7 +362,6 @@
         }
 
         document.getElementById('in-signature-image').addEventListener('change', () => handleImageUpload('in-signature-image', 'out-signature-img'));
-        document.getElementById('in-seal-image').addEventListener('change', () => handleImageUpload('in-seal-image', 'out-seal-img'));
 
         // Core Update Logic
         function updatePreview() {
@@ -405,6 +410,9 @@
             const originalText = btn.innerHTML;
             btn.innerHTML = 'Generating PDF...';
             btn.classList.add('opacity-75', 'cursor-wait');
+
+            // Randomize seal position right before export to ensure it's different every time
+            randomizeSealPosition();
 
             // Force scale 1 for high-quality export
             const container = document.getElementById('prescription-preview');
