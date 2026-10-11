@@ -277,7 +277,7 @@
                                 <!-- Right: Dynamic Seal & Signature Block -->
                                 <div class="w-5/12 flex flex-col items-center justify-end relative text-center">
                                     <div class="h-28 w-full flex justify-center items-center relative z-10 -mb-2">
-                                        <!-- Hardcoded Seal layer with increased size -->
+                                        <!-- Hardcoded Seal layer with increased max-h and max-w -->
                                         <img id="out-seal-img" src="seal.png" class="absolute max-h-[160px] max-w-[210px] w-auto object-contain opacity-85" alt="Official Seal" style="display: block;">
                                         <!-- Signature layer (on top) -->
                                         <img id="out-signature-img" src="" class="absolute max-h-[110px] max-w-[240px] w-auto object-contain z-10" alt="Signature" style="display: none;">
@@ -306,7 +306,7 @@
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const pin = document.getElementById('pin-input').value;
-            if(pin === '3830') {
+            if(pin === '567678') {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-screen').classList.remove('hidden');
                 setDefaultDates();
