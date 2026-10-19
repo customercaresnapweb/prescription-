@@ -83,6 +83,22 @@
                 </div>
                 
                 <div class="space-y-4 text-xs">
+                    <!-- Save / Load Session Data Controls -->
+                    <div class="bg-brand-light p-3.5 rounded-2xl border border-slate-200 space-y-2">
+                        <label class="block font-bold text-brand-navy text-[11px] uppercase tracking-wider">Session Data Management</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" onclick="saveSessionData()" class="bg-brand-teal text-white font-bold py-2 px-3 rounded-xl hover:bg-teal-700 transition-colors shadow-sm flex items-center justify-center gap-1.5 text-xs">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                                Save Session
+                            </button>
+                            <label class="bg-brand-navy text-white font-bold py-2 px-3 rounded-xl hover:bg-slate-800 transition-colors shadow-sm flex items-center justify-center gap-1.5 text-xs cursor-pointer">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                Load Session
+                                <input type="file" id="load-file-input" accept=".json" class="hidden" onchange="loadSessionData(event)">
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Image Uploads -->
                     <div class="grid grid-cols-1 gap-3 mb-2">
                         <div class="bg-teal-50/60 p-3 rounded-xl border border-teal-100/80">
@@ -133,7 +149,7 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block font-semibold text-slate-600 mb-1">Session Number</label>
-                                <select id="in-session-num" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all bg-white font-medium">
+                                <select id="in-session-num" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all bg-white font-medium" onchange="updateTreatmentAlgorithm()">
                                     <option value="1">Session One</option>
                                     <option value="2">Session Two</option>
                                     <option value="3">Session Three</option>
@@ -142,7 +158,7 @@
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-600 mb-1">Antidepressant</label>
-                                <select id="in-antidepressant" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all bg-white font-medium">
+                                <select id="in-antidepressant" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all bg-white font-medium" onchange="updateTreatmentAlgorithm()">
                                     <option value="Sertraline" data-dose="50">Sertraline (50mg)</option>
                                     <option value="Paroxetine" data-dose="20">Paroxetine (20mg)</option>
                                     <option value="Venlafaxine" data-dose="75">Venlafaxine (75mg)</option>
@@ -402,6 +418,67 @@
             updatePreview();
         }
 
+        // Save Session Data as a JSON File
+        function saveSessionData() {
+            const sessionData = {
+                assessmentDate: document.getElementById('in-assessment-date').value,
+                dob: document.getElementById('in-dob').value,
+                name: document.getElementById('in-name').value,
+                gender: document.getElementById('in-gender').value,
+                address: document.getElementById('in-address').value,
+                sessionNum: document.getElementById('in-session-num').value,
+                antidepressant: document.getElementById('in-antidepressant').value,
+                evaluation: document.getElementById('in-evaluation').value,
+                history: document.getElementById('in-history').value,
+                diagnosis: document.getElementById('in-diagnosis').value,
+                treatment: document.getElementById('in-treatment').value
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessionData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            const patientName = document.getElementById('in-name').value.trim() || 'Patient';
+            const sessionNum = document.getElementById('in-session-num').value;
+            downloadAnchor.setAttribute("download", `MindCare_${patientName}_Session_${sessionNum}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // Load Session Data from a JSON File
+        function loadSessionData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if(data.assessmentDate) document.getElementById('in-assessment-date').value = data.assessmentDate;
+                    if(data.dob !== undefined) document.getElementById('in-dob').value = data.dob;
+                    if(data.name !== undefined) document.getElementById('in-name').value = data.name;
+                    if(data.gender !== undefined) document.getElementById('in-gender').value = data.gender;
+                    if(data.address !== undefined) document.getElementById('in-address').value = data.address;
+                    if(data.sessionNum !== undefined) document.getElementById('in-session-num').value = data.sessionNum;
+                    if(data.antidepressant !== undefined) document.getElementById('in-antidepressant').value = data.antidepressant;
+                    if(data.evaluation !== undefined) document.getElementById('in-evaluation').value = data.evaluation;
+                    if(data.history !== undefined) document.getElementById('in-history').value = data.history;
+                    if(data.diagnosis !== undefined) document.getElementById('in-diagnosis').value = data.diagnosis;
+                    if(data.treatment !== undefined) document.getElementById('in-treatment').value = data.treatment;
+
+                    updatePreview();
+                    alert("Session data loaded successfully! You can now review and edit as needed.");
+                } catch (err) {
+                    console.error("Failed to parse JSON session file:", err);
+                    alert("Invalid session file format.");
+                }
+                // Reset file input so same file can be loaded again if needed
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
         // Randomize Seal Position slightly for realism
         function randomizeSealPosition() {
             const sealImg = document.getElementById('out-seal-img');
@@ -439,8 +516,6 @@
         }
 
         document.getElementById('in-signature-image').addEventListener('change', () => handleImageUpload('in-signature-image', 'out-signature-img'));
-        document.getElementById('in-session-num').addEventListener('change', updateTreatmentAlgorithm);
-        document.getElementById('in-antidepressant').addEventListener('change', updateTreatmentAlgorithm);
 
         // Update follow-up date in treatment text when assessment date changes
         function updateFollowUpDate() {
