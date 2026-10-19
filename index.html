@@ -87,7 +87,7 @@
                     <div class="grid grid-cols-1 gap-3 mb-2">
                         <div class="bg-teal-50/60 p-3 rounded-xl border border-teal-100/80">
                             <label class="block font-bold text-[11px] uppercase tracking-wider text-brand-teal mb-1.5">Signature</label>
-                            <input type="file" id="in-signature-image" accept="image/*" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-brand-navy file:text-white hover:file:bg-brand-teal cursor-pointer transition-colors">
+                            <input type="file" id="in-signature-image" accept="image/*" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-brand-navy file:text-white hover:file:bg-brand-teal cursor-pointer transition-colors">
                         </div>
                         <div class="mt-[-4px]">
                             <p class="text-[10px] text-teal-800">Seal is loaded automatically. Backgrounds are made transparent automatically. Placements randomize slightly on export.</p>
@@ -126,28 +126,61 @@
                         </div>
                     </div>
 
+                    <!-- Prescription & Treatment Algorithm (Sessions) -->
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-3">
+                        <h3 class="font-bold text-brand-navy text-[11px] uppercase tracking-wider">Prescription & Treatment Algorithm</h3>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Session Number</label>
+                                <select id="in-session-num" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all bg-white font-medium">
+                                    <option value="1">Session One</option>
+                                    <option value="2">Session Two</option>
+                                    <option value="3">Session Three</option>
+                                    <option value="4">Session Four</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Antidepressant</label>
+                                <select id="in-antidepressant" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all bg-white font-medium">
+                                    <option value="Sertraline" data-dose="50">Sertraline (50mg)</option>
+                                    <option value="Paroxetine" data-dose="20">Paroxetine (20mg)</option>
+                                    <option value="Venlafaxine" data-dose="75">Venlafaxine (75mg)</option>
+                                    <option value="Fluoxetine" data-dose="20">Fluoxetine (20mg)</option>
+                                    <option value="Escitalopram" data-dose="5" selected>Escitalopram (5mg)</option>
+                                    <option value="Mirtazapine" data-dose="15">Mirtazapine (15mg)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-1">
+                            <input type="checkbox" id="in-propranolol" checked disabled class="rounded border-slate-300 text-brand-teal focus:ring-brand-teal">
+                            <label for="in-propranolol" class="font-semibold text-slate-700 text-[11px]">T. Propranolol 10 mg (Default for all patients)</label>
+                        </div>
+                    </div>
+
                     <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 text-[11px] text-slate-500">
                         <span class="font-bold text-brand-teal">Formatting Tip:</span> Use double asterisks for bolding (e.g. <code class="bg-white px-1 py-0.5 rounded border border-slate-200 font-mono text-brand-navy">**recurrent intrusive memories**</code>).
                     </div>
 
                     <div>
                         <label class="block font-bold text-brand-navy mb-1">Clinical Evaluation</label>
-                        <textarea id="in-evaluation" placeholder="Enter detailed clinical evaluation..." rows="5" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all resize-y text-xs leading-relaxed"></textarea>
+                        <textarea id="in-evaluation" placeholder="Enter detailed clinical evaluation..." rows="4" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all resize-y text-xs leading-relaxed"></textarea>
                     </div>
 
                     <div>
                         <label class="block font-bold text-brand-navy mb-1">Background and History</label>
-                        <textarea id="in-history" placeholder="Enter occupational/medical history..." rows="4" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all resize-y text-xs leading-relaxed"></textarea>
+                        <textarea id="in-history" placeholder="Enter occupational/medical history..." rows="3" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all resize-y text-xs leading-relaxed"></textarea>
                     </div>
 
                     <div>
                         <label class="block font-bold text-brand-navy mb-1">Diagnosis</label>
-                        <input type="text" id="in-diagnosis" placeholder="Primary Diagnosis" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all font-semibold">
+                        <input type="text" id="in-diagnosis" value="BASED ON DETAILED CLINICAL HISTORY SYMPTOM ASSESSMENT, HE HAS BEEN DIAGNOSED WITH POST TRAUMATIC STRESS DISORDER (PTSD)" placeholder="Primary Diagnosis" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all font-semibold">
                     </div>
 
                     <div>
-                        <label class="block font-bold text-brand-navy mb-1">Treatment and Management</label>
-                        <textarea id="in-treatment" placeholder="Advised medications, follow-up, and plan..." rows="5" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all resize-y text-xs leading-relaxed"></textarea>
+                        <label class="block font-bold text-brand-navy mb-1">Treatment and Management (Auto-generated by Session)</label>
+                        <textarea id="in-treatment" placeholder="Advised medications, follow-up, and plan..." rows="6" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all resize-y text-xs leading-relaxed"></textarea>
                     </div>
 
                     <button id="export-btn" onclick="generatePDF()" class="w-full bg-brand-navy text-white font-bold py-3.5 rounded-xl mt-4 hover:bg-brand-teal transition-colors shadow-lg flex items-center justify-center gap-2 text-sm">
@@ -317,10 +350,55 @@
             }
         });
 
-        // Set Default Date to Today
+        // Set Default Dates and dynamic treatment algorithm
         function setDefaultDates() {
-            const today = new Date().toISOString().split('T')[0];
+            const todayDate = new Date();
+            const today = todayDate.toISOString().split('T')[0];
             document.getElementById('in-assessment-date').value = today;
+
+            updateTreatmentAlgorithm();
+        }
+
+        // Automatic Treatment Algorithm based on Session & Medication selection with precise escalation
+        function updateTreatmentAlgorithm() {
+            const session = document.getElementById('in-session-num').value;
+            const selectEl = document.getElementById('in-antidepressant');
+            const drug = selectEl.value;
+            const startDose = parseInt(selectEl.options[selectEl.selectedIndex].getAttribute('data-dose')) || 5;
+            
+            const dateVal = document.getElementById('in-assessment-date').value;
+            const todayDate = dateVal ? new Date(dateVal) : new Date();
+            const nextMonthDate = new Date(todayDate);
+            nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+            const formattedNextMonth = `${nextMonthDate.getDate().toString().padStart(2, '0')}-${(nextMonthDate.getMonth()+1).toString().padStart(2, '0')}-${nextMonthDate.getFullYear()}`;
+
+            let medText = '';
+
+            // Propranolol escalation schedule:
+            // Session 1: Morning (1-0-0)
+            // Session 2: Morning and Afternoon (1-1-0)
+            // Session 3 & 4: Morning, Afternoon, and Night (1-1-1)
+            let propText = '';
+            if (session === '1') {
+                propText = `2. **T. Propranolol 10 mg** (1-0-0) one tablet in the morning.`;
+            } else if (session === '2') {
+                propText = `2. **T. Propranolol 10 mg** (1-1-0) one tablet in the morning and one tablet in the afternoon.`;
+            } else {
+                propText = `2. **T. Propranolol 10 mg** (1-1-1) one tablet in the morning, one tablet in the afternoon and one tablet at night.`;
+            }
+
+            if (session === '1') {
+                medText = `1. **T. ${drug} ${startDose}mg** (0-0-1) one tablet at night.\n${propText}`;
+            } else if (session === '2') {
+                medText = `1. **T. ${drug} ${startDose}mg** (1-0-1) one tablet in the morning and one tablet at night.\n${propText}`;
+            } else if (session === '3') {
+                medText = `1. **T. ${drug} ${startDose}mg** (2-0-1) two tablets in the morning and one tablet at night.\n${propText}`;
+            } else if (session === '4') {
+                medText = `1. **T. ${drug} ${startDose}mg** (2-0-2) two tablets in the morning and two tablets at night.\n${propText}`;
+            }
+
+            const fullTreatment = `${medText}\n\nHe is unable to work due to current medical condition and requires ongoing psychiatric care.\n\nFollowup after 1 month & Next followup date ${formattedNextMonth}`;
+            document.getElementById('in-treatment').value = fullTreatment;
             updatePreview();
         }
 
@@ -351,7 +429,6 @@
                     img.src = e.target.result;
                     img.style.display = 'block';
                     
-                    // Add slight random rotation (-3 to 3 degrees) and position shift
                     const rotation = (Math.random() * 6 - 3).toFixed(1);
                     const shiftX = (Math.random() * 6 - 3).toFixed(1);
                     const shiftY = (Math.random() * 6 - 3).toFixed(1);
@@ -362,10 +439,31 @@
         }
 
         document.getElementById('in-signature-image').addEventListener('change', () => handleImageUpload('in-signature-image', 'out-signature-img'));
+        document.getElementById('in-session-num').addEventListener('change', updateTreatmentAlgorithm);
+        document.getElementById('in-antidepressant').addEventListener('change', updateTreatmentAlgorithm);
+
+        // Update follow-up date in treatment text when assessment date changes
+        function updateFollowUpDate() {
+            const dateVal = document.getElementById('in-assessment-date').value;
+            if(dateVal) {
+                const nextMonthDate = new Date(dateVal);
+                nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+                const formattedNextMonth = `${nextMonthDate.getDate().toString().padStart(2, '0')}-${(nextMonthDate.getMonth()+1).toString().padStart(2, '0')}-${nextMonthDate.getFullYear()}`;
+                
+                const treatmentEl = document.getElementById('in-treatment');
+                const regex = /Next followup date "?\d{2}-\d{2}-\d{4}"?/;
+                if(regex.test(treatmentEl.value)) {
+                    treatmentEl.value = treatmentEl.value.replace(regex, `Next followup date ${formattedNextMonth}`);
+                }
+            }
+            updatePreview();
+        }
+
+        document.getElementById('in-assessment-date').addEventListener('input', updateFollowUpDate);
+        document.getElementById('in-assessment-date').addEventListener('change', updateFollowUpDate);
 
         // Core Update Logic
         function updatePreview() {
-            // Patient Details
             const formatDate = (dateStr) => {
                 if(!dateStr) return '';
                 const d = new Date(dateStr);
@@ -375,13 +473,9 @@
             document.getElementById('out-assessment-date').innerText = formatDate(document.getElementById('in-assessment-date').value);
             document.getElementById('out-name').innerText = document.getElementById('in-name').value;
             document.getElementById('out-gender').innerText = document.getElementById('in-gender').value;
-            
-            // Changed DOB to map directly as typed text instead of enforcing date formatting
             document.getElementById('out-dob').innerText = document.getElementById('in-dob').value;
-            
             document.getElementById('out-address').innerText = document.getElementById('in-address').value;
 
-            // Content Blocks with Formatting
             const evaluation = document.getElementById('in-evaluation').value;
             const history = document.getElementById('in-history').value;
             const diagnosis = document.getElementById('in-diagnosis').value;
@@ -403,9 +497,12 @@
         // Attach Event Listeners to all text/date inputs
         const inputs = document.querySelectorAll('input[type="text"], input[type="date"], select, textarea');
         inputs.forEach(input => {
-            input.addEventListener('input', updatePreview);
-            input.addEventListener('change', updatePreview);
+            if(input.id !== 'in-treatment' && input.id !== 'in-session-num' && input.id !== 'in-antidepressant') {
+                input.addEventListener('input', updatePreview);
+                input.addEventListener('change', updatePreview);
+            }
         });
+        document.getElementById('in-treatment').addEventListener('input', updatePreview);
 
         // Generate PDF
         function generatePDF() {
@@ -414,10 +511,8 @@
             btn.innerHTML = 'Generating PDF...';
             btn.classList.add('opacity-75', 'cursor-wait');
 
-            // Randomize seal position right before export to ensure it's different every time
             randomizeSealPosition();
 
-            // Force scale 1 for high-quality export
             const container = document.getElementById('prescription-preview');
             const currentTransform = container.style.transform;
             container.classList.remove('scale-[0.48]', 'sm:scale-[0.7]', 'lg:scale-100');
@@ -445,7 +540,6 @@
                     const date = document.getElementById('in-assessment-date').value || 'Report';
                     pdf.save(`Dr_Abimanyu_${patientName}_${date}.pdf`);
 
-                    // Restore Preview Scaling
                     container.classList.add('scale-[0.48]', 'sm:scale-[0.7]', 'lg:scale-100');
                     container.style.transform = currentTransform;
                     
@@ -457,7 +551,6 @@
                     btn.innerHTML = originalText;
                     btn.classList.remove('opacity-75', 'cursor-wait');
                     
-                    // Restore Preview Scaling on Error
                     container.classList.add('scale-[0.48]', 'sm:scale-[0.7]', 'lg:scale-100');
                     container.style.transform = currentTransform;
                 });
