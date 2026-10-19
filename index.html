@@ -100,8 +100,8 @@
                             <input type="date" id="in-assessment-date" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all">
                         </div>
                         <div>
-                            <label class="block font-semibold text-slate-600 mb-1">Date of Birth</label>
-                            <input type="date" id="in-dob" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all">
+                            <label class="block font-semibold text-slate-600 mb-1">Date of Birth / Age</label>
+                            <input type="text" id="in-dob" placeholder="e.g. 24-05-1990 or 34 Yrs" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all">
                         </div>
                     </div>
 
@@ -208,7 +208,7 @@
                                         <span id="out-gender" class="font-semibold text-brand-navy flex-1"></span>
                                     </div>
                                     <div class="col-span-6 flex items-baseline">
-                                        <span class="text-slate-500 font-semibold w-28 shrink-0">DOB</span>
+                                        <span class="text-slate-500 font-semibold w-28 shrink-0">DOB / Age</span>
                                         <span class="text-slate-400 mr-2">:</span>
                                         <span id="out-dob" class="font-semibold text-brand-navy flex-1"></span>
                                     </div>
@@ -375,7 +375,10 @@
             document.getElementById('out-assessment-date').innerText = formatDate(document.getElementById('in-assessment-date').value);
             document.getElementById('out-name').innerText = document.getElementById('in-name').value;
             document.getElementById('out-gender').innerText = document.getElementById('in-gender').value;
-            document.getElementById('out-dob').innerText = formatDate(document.getElementById('in-dob').value);
+            
+            // Changed DOB to map directly as typed text instead of enforcing date formatting
+            document.getElementById('out-dob').innerText = document.getElementById('in-dob').value;
+            
             document.getElementById('out-address').innerText = document.getElementById('in-address').value;
 
             // Content Blocks with Formatting
