@@ -105,9 +105,6 @@
                             <label class="block font-bold text-[11px] uppercase tracking-wider text-brand-teal mb-1.5">Signature</label>
                             <input type="file" id="in-signature-image" accept="image/*" class="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-brand-navy file:text-white hover:file:bg-brand-teal cursor-pointer transition-colors">
                         </div>
-                        <div class="mt-[-4px]">
-                            <p class="text-[10px] text-teal-800">Seal is loaded automatically. Backgrounds are made transparent automatically. Placements randomize slightly on export.</p>
-                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -175,8 +172,21 @@
                         </div>
                     </div>
 
-                    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 text-[11px] text-slate-500">
-                        <span class="font-bold text-brand-teal">Formatting Tip:</span> Use double asterisks for bolding (e.g. <code class="bg-white px-1 py-0.5 rounded border border-slate-200 font-mono text-brand-navy">**recurrent intrusive memories**</code>).
+                    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/60 text-[11px] text-slate-500 flex justify-between items-center">
+                        <div>
+                            <span class="font-bold text-brand-teal">Formatting Tip:</span> Use double asterisks for bolding (e.g. <code class="bg-white px-1 py-0.5 rounded border border-slate-200 font-mono text-brand-navy">**recurrent intrusive memories**</code>).
+                        </div>
+                    </div>
+
+                    <!-- FONT SIZE SETTING -->
+                    <div>
+                        <label class="block font-bold text-brand-navy mb-1">Report Font Size</label>
+                        <select id="in-font-size" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all font-medium bg-white" onchange="updatePreview()">
+                            <option value="11px">Small (11px)</option>
+                            <option value="12.5px" selected>Normal (12.5px)</option>
+                            <option value="14px">Large (14px)</option>
+                            <option value="15.5px">Extra Large (15.5px)</option>
+                        </select>
                     </div>
 
                     <div>
@@ -276,25 +286,25 @@
                             <!-- Clinical Evaluation -->
                             <div id="evaluation-container" class="hidden report-section pl-3.5">
                                 <h3 class="text-[12.5px] font-bold text-brand-navy uppercase tracking-wider mb-0.5">Clinical Evaluation:</h3>
-                                <div id="out-evaluation" class="rich-text text-[12.5px] leading-[1.55] text-slate-800 text-justify"></div>
+                                <div id="out-evaluation" class="rich-text leading-[1.55] text-slate-800 text-justify" style="font-size: 12.5px;"></div>
                             </div>
 
                             <!-- Background & History -->
                             <div id="history-container" class="hidden report-section pl-3.5">
                                 <h3 class="text-[12.5px] font-bold text-brand-navy uppercase tracking-wider mb-0.5">Background and History:</h3>
-                                <div id="out-history" class="rich-text text-[12.5px] leading-[1.55] text-slate-800 text-justify"></div>
+                                <div id="out-history" class="rich-text leading-[1.55] text-slate-800 text-justify" style="font-size: 12.5px;"></div>
                             </div>
 
                             <!-- Diagnosis -->
                             <div id="diagnosis-container" class="hidden report-section pl-3.5">
                                 <h3 class="text-[12.5px] font-bold text-brand-navy uppercase tracking-wider mb-0.5">Diagnosis:</h3>
-                                <div id="out-diagnosis" class="rich-text text-[12.5px] font-bold text-brand-navy leading-[1.4] uppercase"></div>
+                                <div id="out-diagnosis" class="rich-text font-bold text-brand-navy leading-[1.4] uppercase" style="font-size: 12.5px;"></div>
                             </div>
 
                             <!-- Treatment & Management -->
                             <div id="treatment-container" class="hidden report-section pl-3.5">
                                 <h3 class="text-[12.5px] font-bold text-brand-navy uppercase tracking-wider mb-0.5">Treatment and Management:</h3>
-                                <div id="out-treatment" class="rich-text text-[12.5px] leading-[1.55] text-slate-800 text-justify"></div>
+                                <div id="out-treatment" class="rich-text leading-[1.55] text-slate-800 text-justify" style="font-size: 12.5px;"></div>
                             </div>
 
                         </div>
@@ -412,6 +422,7 @@
             nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
             const formattedNextMonth = `${nextMonthDate.getDate().toString().padStart(2, '0')}-${(nextMonthDate.getMonth()+1).toString().padStart(2, '0')}-${nextMonthDate.getFullYear()}`;
 
+            // --- Update Diagnosis ---
             const diagEl = document.getElementById('in-diagnosis');
             if (session === '1') {
                 diagEl.value = "BASED ON DETAILED CLINICAL HISTORY SYMPTOM ASSESSMENT, HE HAS BEEN DIAGNOSED WITH POST TRAUMATIC STRESS DISORDER (PTSD)";
@@ -419,6 +430,37 @@
                 diagEl.value = "Based on clinical evaluation and psychiatric assessment, he has been diagnosed with Post-Traumatic Stress Disorder (PTSD), secondary to exposure to traumatic events while working in a war zone";
             }
 
+            // --- Update Default Clinical Evaluation Text ---
+            const evalEl = document.getElementById('in-evaluation');
+            const defaultFollowUpEvalText = "The patient was reassessed in the follow-up session.";
+            
+            if (session !== '1') {
+                if (evalEl.value.trim() === "") {
+                    evalEl.value = defaultFollowUpEvalText;
+                }
+            } else {
+                if (evalEl.value.trim() === defaultFollowUpEvalText) {
+                    evalEl.value = "";
+                }
+            }
+
+            // --- Update Default Background & History Text ---
+            const histEl = document.getElementById('in-history');
+            const defaultFollowUpHistText = "Post-Traumatic Stress Disorder (PTSD) and associated psychological distress secondary to life-threatening exposures in a combat zone";
+            
+            if (session !== '1') {
+                // If it's empty, switch it to follow-up text for sessions 2,3,4
+                if (histEl.value.trim() === "") {
+                    histEl.value = defaultFollowUpHistText;
+                }
+            } else {
+                // If we are switching back to Session 1 and it holds the default follow up text, clear it
+                if (histEl.value.trim() === defaultFollowUpHistText) {
+                    histEl.value = "";
+                }
+            }
+
+            // --- Propranolol Logic ---
             let propText = '';
             if (session === '1') {
                 propText = `2. **T. Propranolol 10 mg** (1-0-0) one tablet in the morning.`;
@@ -449,6 +491,7 @@
 
             const fullTreatment = `${followupPrefix}${medText}\n\nHe is unable to work due to current medical condition and requires ongoing psychiatric care.\n\nFollowup after 1 month & Next followup date ${formattedNextMonth}`;
             document.getElementById('in-treatment').value = fullTreatment;
+            
             updatePreview();
         }
 
@@ -462,6 +505,7 @@
                 address: document.getElementById('in-address').value,
                 sessionNum: document.getElementById('in-session-num').value,
                 antidepressant: document.getElementById('in-antidepressant').value,
+                fontSize: document.getElementById('in-font-size').value,
                 evaluation: document.getElementById('in-evaluation').value,
                 history: document.getElementById('in-history').value,
                 diagnosis: document.getElementById('in-diagnosis').value,
@@ -514,6 +558,7 @@
                     if(data.address !== undefined) document.getElementById('in-address').value = data.address;
                     if(data.sessionNum !== undefined) document.getElementById('in-session-num').value = data.sessionNum;
                     if(data.antidepressant !== undefined) document.getElementById('in-antidepressant').value = data.antidepressant;
+                    if(data.fontSize !== undefined) document.getElementById('in-font-size').value = data.fontSize;
                     if(data.evaluation !== undefined) document.getElementById('in-evaluation').value = data.evaluation;
                     if(data.history !== undefined) document.getElementById('in-history').value = data.history;
                     if(data.diagnosis !== undefined) document.getElementById('in-diagnosis').value = data.diagnosis;
@@ -601,23 +646,33 @@
             const history = document.getElementById('in-history').value;
             const diagnosis = document.getElementById('in-diagnosis').value;
             const treatment = document.getElementById('in-treatment').value;
+            const fontSize = document.getElementById('in-font-size').value;
 
-            document.getElementById('out-evaluation').innerHTML = formatText(evaluation);
+            // Apply text formatting and dynamic font size
+            const evalOut = document.getElementById('out-evaluation');
+            evalOut.innerHTML = formatText(evaluation);
+            evalOut.style.fontSize = fontSize;
             document.getElementById('evaluation-container').style.display = evaluation ? 'block' : 'none';
 
-            document.getElementById('out-history').innerHTML = formatText(history);
+            const histOut = document.getElementById('out-history');
+            histOut.innerHTML = formatText(history);
+            histOut.style.fontSize = fontSize;
             document.getElementById('history-container').style.display = history ? 'block' : 'none';
 
-            document.getElementById('out-diagnosis').innerHTML = formatText(diagnosis);
+            const diagOut = document.getElementById('out-diagnosis');
+            diagOut.innerHTML = formatText(diagnosis);
+            diagOut.style.fontSize = fontSize;
             document.getElementById('diagnosis-container').style.display = diagnosis ? 'block' : 'none';
 
-            document.getElementById('out-treatment').innerHTML = formatText(treatment);
+            const treatOut = document.getElementById('out-treatment');
+            treatOut.innerHTML = formatText(treatment);
+            treatOut.style.fontSize = fontSize;
             document.getElementById('treatment-container').style.display = treatment ? 'block' : 'none';
         }
 
         const inputs = document.querySelectorAll('input[type="text"], input[type="date"], select, textarea');
         inputs.forEach(input => {
-            if(input.id !== 'in-treatment' && input.id !== 'in-session-num' && input.id !== 'in-antidepressant') {
+            if(input.id !== 'in-treatment' && input.id !== 'in-session-num' && input.id !== 'in-antidepressant' && input.id !== 'in-font-size') {
                 input.addEventListener('input', updatePreview);
                 input.addEventListener('change', updatePreview);
             }
