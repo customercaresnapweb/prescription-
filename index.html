@@ -326,9 +326,9 @@
                                 <!-- Right: Dynamic Seal & Signature Block -->
                                 <div class="w-5/12 flex flex-col items-center justify-end relative text-center">
                                     <div class="h-28 w-full flex justify-center items-center relative z-10 -mb-2">
-                                        <!-- Hardcoded Seal layer with increased max-h and max-w -->
+                                        <!-- Hardcoded Seal layer -->
                                         <img id="out-seal-img" src="seal.png" class="absolute max-h-[160px] max-w-[210px] w-auto object-contain opacity-85" alt="Official Seal" style="display: block;">
-                                        <!-- Signature layer (on top) -->
+                                        <!-- Signature layer -->
                                         <img id="out-signature-img" src="" class="absolute max-h-[110px] max-w-[240px] w-auto object-contain z-10" alt="Signature" style="display: none;">
                                     </div>
                                     <div class="border-t border-slate-300 w-56 pt-1 mt-1">
@@ -351,6 +351,33 @@
 
     <!-- Script Section -->
     <script>
+        // Global Directory Handle for File System Access API
+        let rootDirHandle = null;
+
+        // Helper to get or create the Patient's Subfolder
+        async function getSubFolderHandle() {
+            if (!window.showDirectoryPicker) {
+                throw new Error("File System Access API is not supported in this browser.");
+            }
+            
+            // Ask for master folder ONCE per session
+            if (!rootDirHandle) {
+                alert("Please select or create your master 'patients details' folder. The app will use this folder to organize all patient sessions automatically.");
+                rootDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            }
+
+            const patientName = document.getElementById('in-name').value.trim() || 'Unknown_Patient';
+            const sessionNum = document.getElementById('in-session-num').value || '1';
+            const dateVal = document.getElementById('in-assessment-date').value || 'No_Date';
+            
+            // Format: Patient Name Session Number Date
+            const folderName = `${patientName} Session ${sessionNum} ${dateVal}`;
+            
+            // Create or get the subfolder inside the root directory
+            const subFolderHandle = await rootDirHandle.getDirectoryHandle(folderName, { create: true });
+            return subFolderHandle;
+        }
+
         // Security Login
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -359,23 +386,20 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-screen').classList.remove('hidden');
                 setDefaultDates();
-                randomizeSealPosition(); // Initial seal placement
+                randomizeSealPosition(); 
             } else {
                 alert('Invalid PIN.');
                 document.getElementById('pin-input').value = '';
             }
         });
 
-        // Set Default Dates and dynamic treatment algorithm
         function setDefaultDates() {
             const todayDate = new Date();
             const today = todayDate.toISOString().split('T')[0];
             document.getElementById('in-assessment-date').value = today;
-
             updateTreatmentAlgorithm();
         }
 
-        // Automatic Treatment Algorithm based on Session & Medication selection with precise escalation
         function updateTreatmentAlgorithm() {
             const session = document.getElementById('in-session-num').value;
             const selectEl = document.getElementById('in-antidepressant');
@@ -388,12 +412,13 @@
             nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
             const formattedNextMonth = `${nextMonthDate.getDate().toString().padStart(2, '0')}-${(nextMonthDate.getMonth()+1).toString().padStart(2, '0')}-${nextMonthDate.getFullYear()}`;
 
-            let medText = '';
+            const diagEl = document.getElementById('in-diagnosis');
+            if (session === '1') {
+                diagEl.value = "BASED ON DETAILED CLINICAL HISTORY SYMPTOM ASSESSMENT, HE HAS BEEN DIAGNOSED WITH POST TRAUMATIC STRESS DISORDER (PTSD)";
+            } else {
+                diagEl.value = "Based on clinical evaluation and psychiatric assessment, he has been diagnosed with Post-Traumatic Stress Disorder (PTSD), secondary to exposure to traumatic events while working in a war zone";
+            }
 
-            // Propranolol escalation schedule:
-            // Session 1: Morning (1-0-0)
-            // Session 2: Morning and Afternoon (1-1-0)
-            // Session 3 & 4: Morning, Afternoon, and Night (1-1-1)
             let propText = '';
             if (session === '1') {
                 propText = `2. **T. Propranolol 10 mg** (1-0-0) one tablet in the morning.`;
@@ -403,6 +428,7 @@
                 propText = `2. **T. Propranolol 10 mg** (1-1-1) one tablet in the morning, one tablet in the afternoon and one tablet at night.`;
             }
 
+            let medText = '';
             if (session === '1') {
                 medText = `1. **T. ${drug} ${startDose}mg** (0-0-1) one tablet at night.\n${propText}`;
             } else if (session === '2') {
@@ -413,13 +439,21 @@
                 medText = `1. **T. ${drug} ${startDose}mg** (2-0-2) two tablets in the morning and two tablets at night.\n${propText}`;
             }
 
-            const fullTreatment = `${medText}\n\nHe is unable to work due to current medical condition and requires ongoing psychiatric care.\n\nFollowup after 1 month & Next followup date ${formattedNextMonth}`;
+            let followupPrefix = "";
+            if (session !== '1') {
+                const patientName = document.getElementById('in-name').value.trim();
+                const nameDisplay = patientName ? `Mr. ${patientName}` : "Mr.";
+                
+                followupPrefix = `${nameDisplay} continues to experience intrusive recollections of past traumatic events, irritability, persistent anxiety, impaired concentration, and significant emotional distress. Despite ongoing psychiatric treatment, his symptoms have persisted without significant clinical improvement, continuing to adversely affect his psychological well-being and personal and occupational functioning. In view of the persistence of these symptoms, he is advised to continue psychiatric treatment and follow the recommendations outlined below\n\n`;
+            }
+
+            const fullTreatment = `${followupPrefix}${medText}\n\nHe is unable to work due to current medical condition and requires ongoing psychiatric care.\n\nFollowup after 1 month & Next followup date ${formattedNextMonth}`;
             document.getElementById('in-treatment').value = fullTreatment;
             updatePreview();
         }
 
-        // Save Session Data as a JSON File
-        function saveSessionData() {
+        // Save Session Data as a JSON File inside the structured folder
+        async function saveSessionData() {
             const sessionData = {
                 assessmentDate: document.getElementById('in-assessment-date').value,
                 dob: document.getElementById('in-dob').value,
@@ -434,18 +468,36 @@
                 treatment: document.getElementById('in-treatment').value
             };
 
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessionData, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
             const patientName = document.getElementById('in-name').value.trim() || 'Patient';
             const sessionNum = document.getElementById('in-session-num').value;
-            downloadAnchor.setAttribute("download", `MindCare_${patientName}_Session_${sessionNum}.json`);
+            const fileName = `MindCare_${patientName}_Session_${sessionNum}.json`;
+            const content = JSON.stringify(sessionData, null, 2);
+
+            try {
+                if (window.showDirectoryPicker) {
+                    const folderHandle = await getSubFolderHandle();
+                    const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(content);
+                    await writable.close();
+                    alert(`Session data saved successfully in folder: ${folderHandle.name}`);
+                    return; // Exit function if successful
+                }
+            } catch (err) {
+                console.warn("Folder save cancelled or failed. Falling back to standard download.", err);
+            }
+
+            // Fallback for browsers that don't support the Directory API (Safari, Firefox)
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(content);
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", fileName);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
         }
 
-        // Load Session Data from a JSON File
+        // Load Session Data
         function loadSessionData(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -468,18 +520,16 @@
                     if(data.treatment !== undefined) document.getElementById('in-treatment').value = data.treatment;
 
                     updatePreview();
-                    alert("Session data loaded successfully! You can now review and edit as needed.");
+                    alert("Session data loaded successfully!");
                 } catch (err) {
                     console.error("Failed to parse JSON session file:", err);
                     alert("Invalid session file format.");
                 }
-                // Reset file input so same file can be loaded again if needed
                 event.target.value = '';
             };
             reader.readAsText(file);
         }
 
-        // Randomize Seal Position slightly for realism
         function randomizeSealPosition() {
             const sealImg = document.getElementById('out-seal-img');
             const rotation = (Math.random() * 6 - 3).toFixed(1);
@@ -488,14 +538,12 @@
             sealImg.style.transform = `rotate(${rotation}deg) translate(${shiftX}px, ${shiftY}px)`;
         }
 
-        // Format Text with Bold (Markdown Style `**text**` to `<strong>text</strong>`)
         function formatText(text) {
             if (!text) return '';
             let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             return formatted.replace(/\n/g, '<br>');
         }
 
-        // Handle Image Uploads with minor random rotation for realism (Signature only)
         function handleImageUpload(inputId, outputId) {
             const input = document.getElementById(inputId);
             const img = document.getElementById(outputId);
@@ -517,7 +565,6 @@
 
         document.getElementById('in-signature-image').addEventListener('change', () => handleImageUpload('in-signature-image', 'out-signature-img'));
 
-        // Update follow-up date in treatment text when assessment date changes
         function updateFollowUpDate() {
             const dateVal = document.getElementById('in-assessment-date').value;
             if(dateVal) {
@@ -537,7 +584,6 @@
         document.getElementById('in-assessment-date').addEventListener('input', updateFollowUpDate);
         document.getElementById('in-assessment-date').addEventListener('change', updateFollowUpDate);
 
-        // Core Update Logic
         function updatePreview() {
             const formatDate = (dateStr) => {
                 if(!dateStr) return '';
@@ -569,7 +615,6 @@
             document.getElementById('treatment-container').style.display = treatment ? 'block' : 'none';
         }
 
-        // Attach Event Listeners to all text/date inputs
         const inputs = document.querySelectorAll('input[type="text"], input[type="date"], select, textarea');
         inputs.forEach(input => {
             if(input.id !== 'in-treatment' && input.id !== 'in-session-num' && input.id !== 'in-antidepressant') {
@@ -579,8 +624,18 @@
         });
         document.getElementById('in-treatment').addEventListener('input', updatePreview);
 
-        // Generate PDF
-        function generatePDF() {
+        // Generate PDF and save into the structured folder
+        async function generatePDF() {
+            // Check directory FIRST so browser doesn't block the popup security
+            let folderHandle = null;
+            if (window.showDirectoryPicker) {
+                try {
+                    folderHandle = await getSubFolderHandle();
+                } catch (err) {
+                    console.warn("Directory picking failed or was cancelled.", err);
+                }
+            }
+
             const btn = document.getElementById('export-btn');
             const originalText = btn.innerHTML;
             btn.innerHTML = 'Generating PDF...';
@@ -599,7 +654,7 @@
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff'
-                }).then(canvas => {
+                }).then(async canvas => {
                     const imgData = canvas.toDataURL('image/jpeg', 1.0);
                     const { jsPDF } = window.jspdf;
                     
@@ -612,8 +667,25 @@
                     pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
                     
                     const patientName = document.getElementById('in-name').value || 'Patient';
+                    const sessionNum = document.getElementById('in-session-num').value || '1';
                     const date = document.getElementById('in-assessment-date').value || 'Report';
-                    pdf.save(`Dr_Abimanyu_${patientName}_${date}.pdf`);
+                    const fileName = `Dr_Abimanyu_${patientName}_Session_${sessionNum}_${date}.pdf`;
+
+                    try {
+                        if (folderHandle) {
+                            const fileHandle = await folderHandle.getFileHandle(fileName, { create: true });
+                            const writable = await fileHandle.createWritable();
+                            const pdfBlob = pdf.output('blob');
+                            await writable.write(pdfBlob);
+                            await writable.close();
+                            alert(`PDF saved successfully in folder: ${folderHandle.name}`);
+                        } else {
+                            pdf.save(fileName); // Standard download fallback
+                        }
+                    } catch (err) {
+                        console.warn("Folder save cancelled or failed. Falling back to standard download.", err);
+                        pdf.save(fileName);
+                    }
 
                     container.classList.add('scale-[0.48]', 'sm:scale-[0.7]', 'lg:scale-100');
                     container.style.transform = currentTransform;
