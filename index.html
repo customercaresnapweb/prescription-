@@ -55,12 +55,16 @@
 </head>
 <body class="text-brand-slate font-sans antialiased">
 
+    <!-- Toast Notification -->
+    <div id="toast-banner" class="fixed top-4 right-4 z-[60] hidden max-w-sm px-4 py-3 rounded-xl shadow-lg text-xs font-semibold text-white bg-brand-navy border border-teal-500/40 transition-all no-print"></div>
+
     <!-- Login Screen -->
     <div id="login-screen" class="min-h-screen flex items-center justify-center bg-slate-200 px-4 fixed inset-0 z-50">
         <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
             <h1 class="text-2xl font-bold text-center text-brand-navy mb-8 font-serif">MindCare Portal</h1>
             <form id="login-form" class="space-y-6">
                 <input type="password" id="pin-input" class="w-full px-4 py-4 rounded-xl border-2 border-slate-200 focus:border-brand-teal outline-none text-center text-3xl font-bold tracking-[0.5em] transition-all" placeholder="••••" required autofocus>
+                <p id="login-error" class="text-xs text-red-600 text-center font-semibold hidden">Invalid PIN. Please try again.</p>
                 <button type="submit" class="w-full bg-brand-navy text-white font-bold py-4 rounded-xl hover:bg-brand-teal transition-colors shadow-lg">Secure Login</button>
             </form>
         </div>
@@ -126,7 +130,7 @@
                     <div class="grid grid-cols-3 gap-3">
                         <div class="col-span-1">
                             <label class="block font-semibold text-slate-600 mb-1">Gender</label>
-                            <select id="in-gender" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all">
+                            <select id="in-gender" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all" onchange="updateTreatmentAlgorithm()">
                                 <option value="">Select</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
@@ -166,9 +170,15 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2 pt-1">
-                            <input type="checkbox" id="in-propranolol" checked disabled class="rounded border-slate-300 text-brand-teal focus:ring-brand-teal">
-                            <label for="in-propranolol" class="font-semibold text-slate-700 text-[11px]">T. Propranolol 10 mg (Default for all patients)</label>
+                        <div class="space-y-1.5 pt-1">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="in-propranolol" checked disabled class="rounded border-slate-300 text-brand-teal focus:ring-brand-teal">
+                                <label for="in-propranolol" class="font-semibold text-slate-700 text-[11px]">T. Propranolol 10 mg (Default for all patients)</label>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="in-quetiapine" checked onchange="updateTreatmentAlgorithm()" class="rounded border-slate-300 text-brand-teal focus:ring-brand-teal cursor-pointer">
+                                <label for="in-quetiapine" class="font-semibold text-slate-700 text-[11px] cursor-pointer">T. Quetiapine 25 mg SOS (For sleep, half tablet at night)</label>
+                            </div>
                         </div>
                     </div>
 
@@ -337,7 +347,7 @@
                                 <div class="w-5/12 flex flex-col items-center justify-end relative text-center">
                                     <div class="h-28 w-full flex justify-center items-center relative z-10 -mb-2">
                                         <!-- Hardcoded Seal layer -->
-                                        <img id="out-seal-img" src="seal.png" class="absolute max-h-[160px] max-w-[210px] w-auto object-contain opacity-85" alt="Official Seal" style="display: block;">
+                                        <img id="out-seal-img" src="seal.png" onerror="this.style.display='none'" class="absolute max-h-[160px] max-w-[210px] w-auto object-contain opacity-85" alt="Official Seal" style="display: block;">
                                         <!-- Signature layer -->
                                         <img id="out-signature-img" src="" class="absolute max-h-[110px] max-w-[240px] w-auto object-contain z-10" alt="Signature" style="display: none;">
                                     </div>
@@ -363,6 +373,69 @@
     <script>
         // Global Directory Handle for File System Access API
         let rootDirHandle = null;
+        let toastTimer = null;
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast-banner');
+            toast.textContent = message;
+            toast.className = `fixed top-4 right-4 z-[60] max-w-sm px-4 py-3 rounded-xl shadow-lg text-xs font-semibold text-white transition-all no-print ${isError ? 'bg-red-700 border border-red-400/50' : 'bg-brand-navy border border-teal-500/40'}`;
+            toast.classList.remove('hidden');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 4000);
+        }
+
+        // Gender-aware pronouns & honorifics helper
+        function getGenderTerms() {
+            const gender = document.getElementById('in-gender').value;
+            if (gender === 'Female') {
+                return {
+                    title: 'Ms.',
+                    subject: 'she',
+                    Subject: 'She',
+                    SUBJECT: 'SHE',
+                    possessive: 'her',
+                    has: 'has',
+                    HAS: 'HAS',
+                    is: 'is',
+                    requires: 'requires'
+                };
+            }
+            if (gender === 'Other') {
+                return {
+                    title: '',
+                    subject: 'they',
+                    Subject: 'They',
+                    SUBJECT: 'THEY',
+                    possessive: 'their',
+                    has: 'have',
+                    HAS: 'HAVE',
+                    is: 'are',
+                    requires: 'require'
+                };
+            }
+            return {
+                title: 'Mr.',
+                subject: 'he',
+                Subject: 'He',
+                SUBJECT: 'HE',
+                possessive: 'his',
+                has: 'has',
+                HAS: 'HAS',
+                is: 'is',
+                requires: 'requires'
+            };
+        }
+
+        function getFormattedPatientDisplay() {
+            const g = getGenderTerms();
+            const patientName = document.getElementById('in-name').value.trim();
+            if (g.title) {
+                return patientName ? `${g.title} ${patientName}` : g.title;
+            }
+            return patientName ? patientName : 'The patient';
+        }
 
         // Helper to get or create the Patient's Subfolder
         async function getSubFolderHandle() {
@@ -372,7 +445,7 @@
             
             // Ask for master folder ONCE per session
             if (!rootDirHandle) {
-                alert("Please select or create your master 'patients details' folder. The app will use this folder to organize all patient sessions automatically.");
+                showToast("Select or create your master 'patients details' folder to organize patient sessions.");
                 rootDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
             }
 
@@ -392,13 +465,15 @@
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const pin = document.getElementById('pin-input').value;
+            const errEl = document.getElementById('login-error');
             if(pin === '567678') {
+                errEl.classList.add('hidden');
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-screen').classList.remove('hidden');
                 setDefaultDates();
                 randomizeSealPosition(); 
             } else {
-                alert('Invalid PIN.');
+                errEl.classList.remove('hidden');
                 document.getElementById('pin-input').value = '';
             }
         });
@@ -415,6 +490,8 @@
             const selectEl = document.getElementById('in-antidepressant');
             const drug = selectEl.value;
             const startDose = parseInt(selectEl.options[selectEl.selectedIndex].getAttribute('data-dose')) || 5;
+            const includeQuetiapine = document.getElementById('in-quetiapine').checked;
+            const g = getGenderTerms();
             
             const dateVal = document.getElementById('in-assessment-date').value;
             const todayDate = dateVal ? new Date(dateVal) : new Date();
@@ -422,12 +499,12 @@
             nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
             const formattedNextMonth = `${nextMonthDate.getDate().toString().padStart(2, '0')}-${(nextMonthDate.getMonth()+1).toString().padStart(2, '0')}-${nextMonthDate.getFullYear()}`;
 
-            // --- Update Diagnosis ---
+            // --- Update Diagnosis (Gender-aware) ---
             const diagEl = document.getElementById('in-diagnosis');
             if (session === '1') {
-                diagEl.value = "BASED ON DETAILED CLINICAL HISTORY SYMPTOM ASSESSMENT, HE HAS BEEN DIAGNOSED WITH POST TRAUMATIC STRESS DISORDER (PTSD)";
+                diagEl.value = `BASED ON DETAILED CLINICAL HISTORY SYMPTOM ASSESSMENT, ${g.SUBJECT} ${g.HAS} BEEN DIAGNOSED WITH POST TRAUMATIC STRESS DISORDER (PTSD)`;
             } else {
-                diagEl.value = "Based on clinical evaluation and psychiatric assessment, he has been diagnosed with Post-Traumatic Stress Disorder (PTSD), secondary to exposure to traumatic events while working in a war zone";
+                diagEl.value = `Based on clinical evaluation and psychiatric assessment, ${g.subject} ${g.has} been diagnosed with Post-Traumatic Stress Disorder (PTSD), secondary to exposure to traumatic events while working in a war zone`;
             }
 
             // --- Update Default Clinical Evaluation Text ---
@@ -460,38 +537,50 @@
                 }
             }
 
-            // --- Propranolol Logic ---
+            // --- Propranolol Logic (Session 1 & Session 2: 1-0-0; Session 3 & 4: 1-1-1) ---
             let propText = '';
-            if (session === '1') {
+            if (session === '1' || session === '2') {
                 propText = `2. **T. Propranolol 10 mg** (1-0-0) one tablet in the morning.`;
-            } else if (session === '2') {
-                propText = `2. **T. Propranolol 10 mg** (1-1-0) one tablet in the morning and one tablet in the afternoon.`;
             } else {
                 propText = `2. **T. Propranolol 10 mg** (1-1-1) one tablet in the morning, one tablet in the afternoon and one tablet at night.`;
             }
 
+            // --- Sleep Medication Logic (From Session 1 onwards) ---
+            const sleepText = includeQuetiapine
+                ? `\n3. **T. Quetiapine 25 mg** SOS (if reduced sleep, take half tablet at night).`
+                : '';
+
+            // --- Antidepressant Logic (Session 2 keeps Session 1 dose: 0-0-1) ---
             let medText = '';
-            if (session === '1') {
-                medText = `1. **T. ${drug} ${startDose}mg** (0-0-1) one tablet at night.\n${propText}`;
-            } else if (session === '2') {
-                medText = `1. **T. ${drug} ${startDose}mg** (1-0-1) one tablet in the morning and one tablet at night.\n${propText}`;
+            if (session === '1' || session === '2') {
+                medText = `1. **T. ${drug} ${startDose}mg** (0-0-1) one tablet at night.\n${propText}${sleepText}`;
             } else if (session === '3') {
-                medText = `1. **T. ${drug} ${startDose}mg** (2-0-1) two tablets in the morning and one tablet at night.\n${propText}`;
+                medText = `1. **T. ${drug} ${startDose}mg** (2-0-1) two tablets in the morning and one tablet at night.\n${propText}${sleepText}`;
             } else if (session === '4') {
-                medText = `1. **T. ${drug} ${startDose}mg** (2-0-2) two tablets in the morning and two tablets at night.\n${propText}`;
+                medText = `1. **T. ${drug} ${startDose}mg** (2-0-2) two tablets in the morning and two tablets at night.\n${propText}${sleepText}`;
             }
 
             let followupPrefix = "";
             if (session !== '1') {
-                const patientName = document.getElementById('in-name').value.trim();
-                const nameDisplay = patientName ? `Mr. ${patientName}` : "Mr.";
+                const nameDisplay = getFormattedPatientDisplay();
                 
-                followupPrefix = `${nameDisplay} continues to experience intrusive recollections of past traumatic events, irritability, persistent anxiety, impaired concentration, and significant emotional distress. Despite ongoing psychiatric treatment, his symptoms have persisted without significant clinical improvement, continuing to adversely affect his psychological well-being and personal and occupational functioning. In view of the persistence of these symptoms, he is advised to continue psychiatric treatment and follow the recommendations outlined below\n\n`;
+                followupPrefix = `${nameDisplay} continues to experience intrusive recollections of past traumatic events, irritability, persistent anxiety, impaired concentration, and significant emotional distress. Despite ongoing psychiatric treatment, ${g.possessive} symptoms have persisted without significant clinical improvement, continuing to adversely affect ${g.possessive} psychological well-being and personal and occupational functioning. In view of the persistence of these symptoms, ${g.subject} ${g.is} advised to continue psychiatric treatment and follow the recommendations outlined below\n\n`;
             }
 
-            const fullTreatment = `${followupPrefix}${medText}\n\nHe is unable to work due to current medical condition and requires ongoing psychiatric care.\n\nFollowup after 1 month & Next followup date ${formattedNextMonth}`;
+            const fullTreatment = `${followupPrefix}${medText}\n\n${g.Subject} ${g.is} unable to work due to current medical condition and ${g.requires} ongoing psychiatric care.\n\nFollowup after 1 month & Next followup date ${formattedNextMonth}`;
             document.getElementById('in-treatment').value = fullTreatment;
             
+            updatePreview();
+        }
+
+        // Keep follow-up salutation synced when patient name is typed
+        function syncPatientNameInTreatment() {
+            const treatmentEl = document.getElementById('in-treatment');
+            const nameDisplay = getFormattedPatientDisplay();
+            const prefixRegex = /^[^\n]+?(?= continues to experience intrusive recollections)/;
+            if (prefixRegex.test(treatmentEl.value)) {
+                treatmentEl.value = treatmentEl.value.replace(prefixRegex, nameDisplay);
+            }
             updatePreview();
         }
 
@@ -505,6 +594,7 @@
                 address: document.getElementById('in-address').value,
                 sessionNum: document.getElementById('in-session-num').value,
                 antidepressant: document.getElementById('in-antidepressant').value,
+                quetiapine: document.getElementById('in-quetiapine').checked,
                 fontSize: document.getElementById('in-font-size').value,
                 evaluation: document.getElementById('in-evaluation').value,
                 history: document.getElementById('in-history').value,
@@ -524,7 +614,7 @@
                     const writable = await fileHandle.createWritable();
                     await writable.write(content);
                     await writable.close();
-                    alert(`Session data saved successfully in folder: ${folderHandle.name}`);
+                    showToast(`Session data saved in folder: ${folderHandle.name}`);
                     return; // Exit function if successful
                 }
             } catch (err) {
@@ -539,6 +629,7 @@
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
+            showToast(`Session data downloaded as ${fileName}`);
         }
 
         // Load Session Data
@@ -558,6 +649,7 @@
                     if(data.address !== undefined) document.getElementById('in-address').value = data.address;
                     if(data.sessionNum !== undefined) document.getElementById('in-session-num').value = data.sessionNum;
                     if(data.antidepressant !== undefined) document.getElementById('in-antidepressant').value = data.antidepressant;
+                    if(data.quetiapine !== undefined) document.getElementById('in-quetiapine').checked = data.quetiapine;
                     if(data.fontSize !== undefined) document.getElementById('in-font-size').value = data.fontSize;
                     if(data.evaluation !== undefined) document.getElementById('in-evaluation').value = data.evaluation;
                     if(data.history !== undefined) document.getElementById('in-history').value = data.history;
@@ -565,10 +657,10 @@
                     if(data.treatment !== undefined) document.getElementById('in-treatment').value = data.treatment;
 
                     updatePreview();
-                    alert("Session data loaded successfully!");
+                    showToast("Session data loaded successfully!");
                 } catch (err) {
                     console.error("Failed to parse JSON session file:", err);
-                    alert("Invalid session file format.");
+                    showToast("Invalid session file format.", true);
                 }
                 event.target.value = '';
             };
@@ -628,6 +720,7 @@
 
         document.getElementById('in-assessment-date').addEventListener('input', updateFollowUpDate);
         document.getElementById('in-assessment-date').addEventListener('change', updateFollowUpDate);
+        document.getElementById('in-name').addEventListener('input', syncPatientNameInTreatment);
 
         function updatePreview() {
             const formatDate = (dateStr) => {
@@ -672,7 +765,7 @@
 
         const inputs = document.querySelectorAll('input[type="text"], input[type="date"], select, textarea');
         inputs.forEach(input => {
-            if(input.id !== 'in-treatment' && input.id !== 'in-session-num' && input.id !== 'in-antidepressant' && input.id !== 'in-font-size') {
+            if(input.id !== 'in-treatment' && input.id !== 'in-session-num' && input.id !== 'in-antidepressant' && input.id !== 'in-font-size' && input.id !== 'in-gender' && input.id !== 'in-name') {
                 input.addEventListener('input', updatePreview);
                 input.addEventListener('change', updatePreview);
             }
@@ -733,13 +826,15 @@
                             const pdfBlob = pdf.output('blob');
                             await writable.write(pdfBlob);
                             await writable.close();
-                            alert(`PDF saved successfully in folder: ${folderHandle.name}`);
+                            showToast(`PDF saved successfully in folder: ${folderHandle.name}`);
                         } else {
                             pdf.save(fileName); // Standard download fallback
+                            showToast(`PDF downloaded as ${fileName}`);
                         }
                     } catch (err) {
                         console.warn("Folder save cancelled or failed. Falling back to standard download.", err);
                         pdf.save(fileName);
+                        showToast(`PDF downloaded as ${fileName}`);
                     }
 
                     container.classList.add('scale-[0.48]', 'sm:scale-[0.7]', 'lg:scale-100');
@@ -749,7 +844,7 @@
                     btn.classList.remove('opacity-75', 'cursor-wait');
                 }).catch(err => {
                     console.error("PDF generation failed:", err);
-                    alert("There was an error generating the PDF.");
+                    showToast("There was an error generating the PDF.", true);
                     btn.innerHTML = originalText;
                     btn.classList.remove('opacity-75', 'cursor-wait');
                     
