@@ -151,17 +151,25 @@
                             <div>
                                 <label class="block font-semibold text-slate-600 mb-1">Session Number</label>
                                 <select id="in-session-num" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all bg-white font-medium" onchange="updateTreatmentAlgorithm()">
-                                    <option value="1">Session One</option>
-                                    <option value="2">Session Two</option>
-                                    <option value="3">Session Three</option>
-                                    <option value="4">Session Four</option>
+                                    <option value="1">Session 1</option>
+                                    <option value="2">Session 2</option>
+                                    <option value="3">Session 3</option>
+                                    <option value="4">Session 4</option>
+                                    <option value="5">Session 5</option>
+                                    <option value="6">Session 6</option>
+                                    <option value="7">Session 7</option>
+                                    <option value="8">Session 8</option>
+                                    <option value="9">Session 9</option>
+                                    <option value="10">Session 10</option>
+                                    <option value="11">Session 11</option>
+                                    <option value="12">Session 12</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block font-semibold text-slate-600 mb-1">Antidepressant</label>
                                 <select id="in-antidepressant" class="w-full p-2.5 rounded-xl border border-slate-200 focus:border-brand-teal outline-none transition-all bg-white font-medium" onchange="updateTreatmentAlgorithm()">
                                     <option value="Sertraline" data-dose="50">Sertraline (50mg)</option>
-                                    <option value="Paroxetine" data-dose="20">Paroxetine (20mg)</option>
+                                    <option value="Paroxetine" data-dose="10">Paroxetine (10mg)</option>
                                     <option value="Venlafaxine" data-dose="75">Venlafaxine (75mg)</option>
                                     <option value="Fluoxetine" data-dose="20">Fluoxetine (20mg)</option>
                                     <option value="Escitalopram" data-dose="5" selected>Escitalopram (5mg)</option>
@@ -177,7 +185,7 @@
                             </div>
                             <div class="flex items-center gap-2">
                                 <input type="checkbox" id="in-quetiapine" checked onchange="updateTreatmentAlgorithm()" class="rounded border-slate-300 text-brand-teal focus:ring-brand-teal cursor-pointer">
-                                <label for="in-quetiapine" class="font-semibold text-slate-700 text-[11px] cursor-pointer">T. Quetiapine 25 mg SOS (For sleep, half tablet at night)</label>
+                                <label for="in-quetiapine" class="font-semibold text-slate-700 text-[11px] cursor-pointer">T. Quetiapine (Session-based night sleep dose)</label>
                             </div>
                         </div>
                     </div>
@@ -374,6 +382,23 @@
         // Global Directory Handle for File System Access API
         let rootDirHandle = null;
         let toastTimer = null;
+        const fallbackRandomSeed = Math.random().toString(36).slice(2);
+        let treatmentManuallyEdited = false;
+
+        function hashString(str) {
+            let h = 2166136261;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 16777619);
+            }
+            return h >>> 0;
+        }
+
+        function pickForPatientSession(patientName, session, salt, options) {
+            const keyBase = (patientName || fallbackRandomSeed).trim().toLowerCase();
+            const idx = hashString(`${keyBase}|session:${session}|${salt}`) % options.length;
+            return options[idx];
+        }
 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast-banner');
@@ -537,27 +562,80 @@
                 }
             }
 
-            // --- Propranolol Logic (Session 1 & Session 2: 1-0-0; Session 3 & 4: 1-1-1) ---
+            treatmentManuallyEdited = false;
+            const sessionNum = parseInt(session, 10) || 1;
+            const patientName = document.getElementById('in-name').value;
+
+            // --- Propranolol Logic (Sessions 1-3: randomized M/A/N; Session 4+: randomized 2x/day) ---
             let propText = '';
-            if (session === '1' || session === '2') {
-                propText = `2. **T. Propranolol 10 mg** (1-0-0) one tablet in the morning.`;
+            if (sessionNum < 4) {
+                const propSingleOptions = [
+                    'one tablet in the morning.',
+                    'one tablet in the afternoon.',
+                    'one tablet at night.'
+                ];
+                const propSchedule = pickForPatientSession(patientName, session, 'propranolol', propSingleOptions);
+                propText = `2. **T. Propranolol 10 mg** ${propSchedule}`;
             } else {
-                propText = `2. **T. Propranolol 10 mg** (1-1-1) one tablet in the morning, one tablet in the afternoon and one tablet at night.`;
+                const propTwiceOptions = [
+                    'one tablet in the morning and one tablet in the afternoon.',
+                    'one tablet in the morning and one tablet at night.',
+                    'one tablet in the afternoon and one tablet at night.'
+                ];
+                const propSchedule = pickForPatientSession(patientName, session, 'propranolol', propTwiceOptions);
+                propText = `2. **T. Propranolol 10 mg** ${propSchedule}`;
             }
 
-            // --- Sleep Medication Logic (From Session 1 onwards) ---
-            const sleepText = includeQuetiapine
-                ? `\n3. **T. Quetiapine 25 mg** SOS (if reduced sleep, take half tablet at night).`
-                : '';
+            // --- Sleep Medication Logic (Quetiapine: increases on alternate sessions: 12.5, 25, 37.5, 50, 75, 100...) ---
+            let sleepText = '';
+            if (includeQuetiapine) {
+                const qSteps = [12.5, 25, 37.5, 50, 75, 100];
+                const qIdx = Math.floor((sessionNum - 1) / 2);
+                const qDose = qIdx < qSteps.length ? qSteps[qIdx] : 100 + (qIdx - qSteps.length + 1) * 25;
+                if (qDose === 12.5) {
+                    sleepText = `\n3. **T. Quetiapine 25 mg** SOS (for sleep, half tablet at night).`;
+                } else if (qDose === 25) {
+                    sleepText = `\n3. **T. Quetiapine 25 mg** one tablet at night.`;
+                } else {
+                    sleepText = `\n3. **T. Quetiapine ${qDose} mg** at night.`;
+                }
+            }
 
-            // --- Antidepressant Logic (Session 2 keeps Session 1 dose: 0-0-1) ---
+            // --- Antidepressant Logic (Drug-specific starting & escalation doses at S4, S8, S12) ---
+            const adDoses = {
+                Sertraline:   [50, 100, 125, 150], // +50 first escalation, then +25 (max 200mg)
+                Paroxetine:   [10, 20, 30, 40],    // start 10mg, +10mg each escalation
+                Mirtazapine:  [15, 22.5, 30, 37.5],// start 15mg, +7.5mg each escalation
+                Fluoxetine:   [20, 30, 40, 50],    // start 20mg, +10mg each escalation
+                Escitalopram: [5, 10, 15, 20],     // start 5mg, +5mg each escalation
+                Venlafaxine:  [75, 150, 225, 300]  // start 75mg, +75mg each escalation
+            };
+            const adSplits = {
+                Sertraline:   [null, [50, 50],   [75, 50],   [75, 75]],
+                Paroxetine:   [null, [10, 10],   [20, 10],   [20, 20]],
+                Mirtazapine:  [null, [15, 7.5],  [15, 15],   [22.5, 15]],
+                Fluoxetine:   [null, [20, 10],   [20, 20],   [30, 20]],
+                Escitalopram: [null, [5, 5],     [10, 5],    [10, 10]],
+                Venlafaxine:  [null, [75, 75],   [150, 75],  [150, 150]]
+            };
+
+            const stepIdx = sessionNum < 4 ? 0 : (sessionNum < 8 ? 1 : (sessionNum < 12 ? 2 : 3));
+            const totalAdDose = (adDoses[drug] && adDoses[drug][stepIdx]) || startDose;
             let medText = '';
-            if (session === '1' || session === '2') {
-                medText = `1. **T. ${drug} ${startDose}mg** (0-0-1) one tablet at night.\n${propText}${sleepText}`;
-            } else if (session === '3') {
-                medText = `1. **T. ${drug} ${startDose}mg** (2-0-1) two tablets in the morning and one tablet at night.\n${propText}${sleepText}`;
-            } else if (session === '4') {
-                medText = `1. **T. ${drug} ${startDose}mg** (2-0-2) two tablets in the morning and two tablets at night.\n${propText}${sleepText}`;
+            if (stepIdx === 0) {
+                const adSingleOptions = [
+                    'one tablet in the morning.',
+                    'one tablet at night.'
+                ];
+                const adSchedule = pickForPatientSession(patientName, session, 'antidepressant', adSingleOptions);
+                medText = `1. **T. ${drug} ${totalAdDose}mg** ${adSchedule}\n${propText}${sleepText}`;
+            } else {
+                const pair = (adSplits[drug] && adSplits[drug][stepIdx]) || [totalAdDose / 2, totalAdDose / 2];
+                const [d1, d2] = pair;
+                const morningDose = Math.min(d1, d2);
+                const nightDose = Math.max(d1, d2);
+                const splitSchedule = `(${morningDose}mg in the morning and ${nightDose}mg at night).`;
+                medText = `1. **T. ${drug} ${totalAdDose}mg** ${splitSchedule}\n${propText}${sleepText}`;
             }
 
             let followupPrefix = "";
@@ -721,6 +799,13 @@
         document.getElementById('in-assessment-date').addEventListener('input', updateFollowUpDate);
         document.getElementById('in-assessment-date').addEventListener('change', updateFollowUpDate);
         document.getElementById('in-name').addEventListener('input', syncPatientNameInTreatment);
+        document.getElementById('in-name').addEventListener('change', () => {
+            if (!treatmentManuallyEdited) {
+                updateTreatmentAlgorithm();
+            } else {
+                syncPatientNameInTreatment();
+            }
+        });
 
         function updatePreview() {
             const formatDate = (dateStr) => {
@@ -770,7 +855,10 @@
                 input.addEventListener('change', updatePreview);
             }
         });
-        document.getElementById('in-treatment').addEventListener('input', updatePreview);
+        document.getElementById('in-treatment').addEventListener('input', () => {
+            treatmentManuallyEdited = true;
+            updatePreview();
+        });
 
         // Generate PDF and save into the structured folder
         async function generatePDF() {
